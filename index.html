@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Grid Master - Mobile Scroll Fix</title>
+    <title>Grid Master - Compact UI</title>
     <style>
         :root { 
             --primary-color: #007bff; 
@@ -12,7 +12,6 @@
             --header-bg: #007bff;
             --text-color: #333333;
             --border-color: #dee2e6;
-            --input-bg: #ffffff;
         }
         
         body { 
@@ -29,10 +28,10 @@
         header { 
             background: var(--header-bg); 
             color: white; 
-            padding: 10px; 
+            padding: 8px; 
             text-align: center; 
             font-weight: bold; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+            font-size: 0.9rem;
             z-index: 30; 
             flex-shrink: 0;
         }
@@ -43,53 +42,50 @@
             overflow: hidden; 
         }
         
-        /* サイドバー設定パネル */
+        /* PC: 左側サイドバー / モバイル: 下側パネル */
         #sidebar { 
             width: 280px; 
             background: var(--sidebar-bg); 
-            padding: 20px; 
+            padding: 15px; 
             overflow-y: auto; 
             border-right: 1px solid var(--border-color); 
             z-index: 20; 
-            box-shadow: 2px 0 10px rgba(0,0,0,0.05); 
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
         }
 
         .control-group { 
             border-bottom: 1px solid #f1f1f1; 
-            padding-bottom: 15px; 
+            padding-bottom: 10px; 
         }
 
         label { 
             display: block; 
-            font-size: 0.85rem; 
+            font-size: 0.75rem; 
             font-weight: 600; 
-            margin-bottom: 8px; 
-            color: #555; 
+            margin-bottom: 5px; 
+            color: #666; 
         }
         
         input[type="number"], input[type="range"], select { 
             width: 100%; 
-            padding: 8px; 
-            background: var(--input-bg); 
+            padding: 6px; 
+            background: #fff; 
             border: 1px solid var(--border-color); 
-            color: var(--text-color); 
-            border-radius: 6px; 
-            font-size: 0.9rem;
+            border-radius: 4px; 
+            font-size: 0.85rem;
             box-sizing: border-box;
         }
 
         input[type="color"] { 
             border: 1px solid var(--border-color); 
-            height: 38px; 
-            cursor: pointer; 
+            height: 30px; 
+            width: 50px;
             padding: 2px;
-            width: 60px;
         }
         
-        .row { display: flex; gap: 8px; align-items: center; }
+        .row { display: flex; gap: 5px; align-items: center; }
         
         /* プレビューエリア */
         #canvas-container { 
@@ -99,80 +95,50 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            background: #e9ecef; 
-            /* touch-action: none; スマホのスクロールを阻害するため削除 */
+            background: #d1d8dd; 
         }
 
         canvas { 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
             background: white; 
-            cursor: move;
         }
 
-        /* ドラッグ＆ドロップ時のオーバーレイ */
         #drop-overlay { 
-            position: absolute; 
-            inset: 0; 
-            background: rgba(0, 123, 255, 0.15); 
-            border: 4px dashed var(--primary-color); 
-            display: none; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 100; 
-            pointer-events: none; 
-            color: var(--primary-color); 
-            font-weight: bold; 
-            font-size: 1.2rem; 
+            position: absolute; inset: 0; 
+            background: rgba(0, 123, 255, 0.1); 
+            border: 3px dashed var(--primary-color); 
+            display: none; align-items: center; justify-content: center; 
+            z-index: 100; color: var(--primary-color); font-weight: bold; 
         }
 
         button { 
-            width: 100%; 
-            padding: 14px; 
-            border: none; 
-            border-radius: 6px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            transition: 0.2s; 
-            font-size: 1rem; 
+            width: 100%; padding: 12px; 
+            border: none; border-radius: 6px; 
+            font-weight: bold; cursor: pointer; 
+            font-size: 0.9rem; 
         }
 
-        #downloadBtn { 
-            background: var(--primary-color); 
-            color: white; 
-            margin-top: auto;
-        }
-
+        #downloadBtn { background: var(--primary-color); color: white; margin-top: 5px; }
         #downloadBtn:hover { background: #0056b3; }
-        
-        .guide { 
-            font-size: 0.75rem; 
-            color: #888; 
-            line-height: 1.5; 
-            background: #f8f9fa; 
-            padding: 10px; 
-            border-radius: 6px; 
-        }
 
-        .data-display { font-size: 0.7rem; color: #999; margin-top: 20px; border-top: 1px dashed #ddd; padding-top: 10px; }
-
-        /* レスポンシブ対応 (スマホ・タブレット用) */
+        /* レスポンシブ対応 (モバイル最適化) */
         @media (max-width: 768px) {
-            main { flex-direction: column-reverse; overflow-y: auto; } /* プレビューを上、設定を下にする */
+            main { 
+                flex-direction: column; /* 上に画像、下に設定 */
+                overflow-y: auto; 
+            }
             #sidebar { 
-                width: 100%; 
-                height: auto; 
+                width: 100%; height: auto; 
                 border-right: none; 
-                border-top: 1px solid var(--border-color); 
                 padding: 15px; 
-                flex-shrink: 0;
+                overflow-y: visible; /* 全体スクロールに任せる */
             }
             #canvas-container { 
-                min-height: 400px; /* 操作エリアを確保 */
+                height: 45vh; /* 画面の約半分をプレビューに */
+                min-height: 300px;
                 flex: none; 
-                touch-action: auto; /* 明示的に自動に */
             }
-            header { font-size: 0.9rem; padding: 8px; }
-            .guide { display: none; } /* スマホでは説明を簡略化 */
+            .control-group { margin-bottom: 10px; padding-bottom: 8px; }
         }
     </style>
 </head>
@@ -183,6 +149,10 @@
 <header>Grid Master</header>
 
 <main>
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+
     <aside id="sidebar">
         <div class="control-group">
             <label>1. 画像のアップロード</label>
@@ -190,44 +160,31 @@
         </div>
 
         <div class="control-group">
-            <label>2. グリッド分割数 (縦 × 横)</label>
+            <label>2. 分割数 (縦 × 横)</label>
             <div class="row">
                 <input type="number" id="rows" value="4"> <span>×</span> <input type="number" id="cols" value="4">
             </div>
         </div>
 
         <div class="control-group">
-            <label>3. 画像の透過度: <span id="opacityDisplay">70</span>%</label>
+            <label>3. 透過度: <span id="opacityDisplay">70</span>%</label>
             <input type="range" id="opacity" min="0" max="100" value="70">
         </div>
 
         <div class="control-group">
-            <label>4. グリッドの色・太さ</label>
+            <label>4. 色・太さ</label>
             <div class="row">
                 <input type="color" id="gridColor" value="#000000">
                 <input type="number" id="gridWeight" value="6" min="1">
             </div>
         </div>
 
-        <div class="guide">
-            【操作方法】<br>
-            ・枠の角や辺をドラッグでサイズ調整<br>
-            ・枠内をドラッグで位置調整<br>
-            ・ホイールで等比拡大縮小
-        </div>
-
-        <button id="downloadBtn">PNGで保存</button>
-
-        <div class="data-display">
-            <label>選択範囲 (px)</label>
-            <div class="row"><input type="number" id="cropX" readonly> <input type="number" id="cropY" readonly></div>
-            <div class="row" style="margin-top:5px;"><input type="number" id="cropW" readonly> <input type="number" id="cropH" readonly></div>
+        <button id="downloadBtn">PNG保存</button>
+        
+        <div style="font-size: 0.65rem; color: #999; text-align: center; margin-top: 10px;">
+            画像内ドラッグで移動 / 隅ドラッグでサイズ変更
         </div>
     </aside>
-
-    <div id="canvas-container">
-        <canvas id="canvas"></canvas>
-    </div>
 </main>
 
 <script>
@@ -237,10 +194,6 @@
     const dropOverlay = document.getElementById('drop-overlay');
     
     const upload = document.getElementById('upload');
-    const cropXInput = document.getElementById('cropX');
-    const cropYInput = document.getElementById('cropY');
-    const cropWInput = document.getElementById('cropW');
-    const cropHInput = document.getElementById('cropH');
     const rowsInput = document.getElementById('rows');
     const colsInput = document.getElementById('cols');
     const opacityInput = document.getElementById('opacity');
@@ -253,9 +206,8 @@
     let interactionMode = 'none';
     let activeHandle = null;
     let lastMouse = { x: 0, y: 0 };
-    const handleSize = 16; // スマホでも掴みやすいサイズ
+    const handleSize = 18; // 掴みやすさ優先
 
-    // --- ファイル読み込み ---
     function handleFile(file) {
         if (!file || !file.type.match('image.*')) return;
         const reader = new FileReader();
@@ -277,11 +229,10 @@
     window.addEventListener('drop', (e) => { e.preventDefault(); dropOverlay.style.display = 'none'; handleFile(e.dataTransfer.files[0]); });
 
     function autoFitScale() {
-        const padding = 20; // 余白を少なく
+        const padding = 10; // 余白を最小限に
         scale = Math.min((container.clientWidth - padding) / img.width, (container.clientHeight - padding) / img.height, 1.0);
     }
 
-    // イベントオブジェクトから画像上の座標を取得する関数
     function getMousePos(e, isTouch = false) {
         const rect = canvas.getBoundingClientRect();
         const clientX = isTouch ? e.touches[0].clientX : e.clientX;
@@ -293,32 +244,18 @@
         const hs = handleSize / scale;
         const hw = hs / 2;
         return {
-            tl: { x: crop.x, y: crop.y, w: hs, h: hs, cursor: 'nwse-resize' },
-            tr: { x: crop.x + crop.w - hs, y: crop.y, w: hs, h: hs, cursor: 'nesw-resize' },
-            bl: { x: crop.x, y: crop.y + crop.h - hs, w: hs, h: hs, cursor: 'nesw-resize' },
-            br: { x: crop.x + crop.w - hs, y: crop.y + crop.h - hs, w: hs, h: hs, cursor: 'nwse-resize' },
-            t:  { x: crop.x + crop.w/2 - hw, y: crop.y, w: hs, h: hs, cursor: 'ns-resize' },
-            b:  { x: crop.x + crop.w/2 - hw, y: crop.y + crop.h - hs, w: hs, h: hs, cursor: 'ns-resize' },
-            l:  { x: crop.x, y: crop.y + crop.h/2 - hw, w: hs, h: hs, cursor: 'ew-resize' },
-            r:  { x: crop.x + crop.w - hs, y: crop.y + crop.h/2 - hw, w: hs, h: hs, cursor: 'ew-resize' }
+            tl: { x: crop.x, y: crop.y, w: hs, h: hs },
+            tr: { x: crop.x + crop.w - hs, y: crop.y, w: hs, h: hs },
+            bl: { x: crop.x, y: crop.y + crop.h - hs, w: hs, h: hs },
+            br: { x: crop.x + crop.w - hs, y: crop.y + crop.h - hs, w: hs, h: hs },
+            t:  { x: crop.x + crop.w/2 - hw, y: crop.y, w: hs, h: hs },
+            b:  { x: crop.x + crop.w/2 - hw, y: crop.y + crop.h - hs, w: hs, h: hs },
+            l:  { x: crop.x, y: crop.y + crop.h/2 - hw, w: hs, h: hs },
+            r:  { x: crop.x + crop.w - hs, y: crop.y + crop.h/2 - hw, w: hs, h: hs }
         };
     }
 
-    // --- インタラクション ---
-    container.onwheel = (e) => {
-        if (!img.src) return;
-        e.preventDefault();
-        const factor = e.deltaY > 0 ? 0.95 : 1.05;
-        const newW = crop.w * factor; const newH = crop.h * factor;
-        if (newW > 20 && newW <= img.width && newH > 20 && newH <= img.height) {
-            crop.x -= (newW - crop.w) / 2; crop.y -= (newH - crop.h) / 2;
-            crop.w = newW; crop.h = newH;
-        }
-        clampCrop(); updateUI(); draw();
-    };
-
-    // 操作開始の共通処理
-    const startAction = (e, isTouch = false) => {
+    function startAction(e, isTouch = false) {
         if (!img.src) return;
         const m = getMousePos(e, isTouch);
         const handles = getHandles();
@@ -336,14 +273,13 @@
             else interactionMode = 'none';
         }
         lastMouse = { x: clientX, y: clientY };
-        // タッチ操作の場合、ここでdrawを呼ばない（スクロールと競合するため、moveActionで処理）
-    };
+    }
 
-    // 移動・リサイズの共通処理
-    const handleMove = (e, clientX, clientY, isTouch = false) => {
+    function handleMove(e, clientX, clientY, isTouch = false) {
         if (!img.src || interactionMode === 'none') return;
-        const m = getMousePos(e, isTouch);
+        if (isTouch && e.cancelable) e.preventDefault();
 
+        const m = getMousePos(e, isTouch);
         const dx = (clientX - lastMouse.x) / scale;
         const dy = (clientY - lastMouse.y) / scale;
         const minS = 20;
@@ -364,46 +300,15 @@
             }
         }
         lastMouse = { x: clientX, y: clientY };
-        clampCrop(); updateUI(); draw();
-    };
+        clampCrop(); draw();
+    }
 
-    const mouseMoveAction = (e) => {
-        // マウスカーソルの変更（PointerMoveで処理）
-        if (interactionMode === 'none') {
-            const m = getMousePos(e, false);
-            const handles = getHandles();
-            let over = false;
-            for (const h of Object.values(handles)) {
-                if (m.x >= h.x && m.x <= h.x + h.w && m.y >= h.y && m.y <= h.y + h.h) {
-                    container.style.cursor = h.cursor; over = true; break;
-                }
-            }
-            if (!over) container.style.cursor = (img.src && m.x >= crop.x && m.x <= crop.x + crop.w && m.y >= crop.y && m.y <= crop.y + crop.h) ? 'move' : 'default';
-        }
-        handleMove(e, e.clientX, e.clientY, false);
-    };
-
-    const touchMoveAction = (e) => {
-        if (!img.src || interactionMode === 'none') return;
-        
-        // 操作中（リサイズ、移動）の場合のみ、ブラウザのデフォルトスクロールを止める
-        if (e.cancelable) e.preventDefault();
-        
-        // タッチポイント情報を取得
-        const touch = e.touches[0];
-        handleMove(e, touch.clientX, touch.clientY, true);
-    };
-
-    // イベントリスナーの登録（マウスとタッチを分ける）
     container.addEventListener('pointerdown', (e) => { startAction(e, false); container.setPointerCapture(e.pointerId); });
-    container.addEventListener('touchstart', (e) => { startAction(e, true); }); // タッチ開始
-
-    window.addEventListener('pointermove', mouseMoveAction);
-    container.addEventListener('touchmove', touchMoveAction, { passive: false }); // passive: false でスクロール抑止可能に
-
-    window.addEventListener('pointerup', (e) => { interactionMode = 'none'; container.releasePointerCapture(e.pointerId); });
-    window.addEventListener('touchend', () => { interactionMode = 'none'; });
-    window.addEventListener('touchcancel', () => { interactionMode = 'none'; }); // キャンセル時もクリア
+    container.addEventListener('touchstart', (e) => startAction(e, true), { passive: false });
+    window.addEventListener('pointermove', (e) => handleMove(e, e.clientX, e.clientY, false));
+    container.addEventListener('touchmove', (e) => handleMove(e, e.touches[0].clientX, e.touches[0].clientY, true), { passive: false });
+    window.addEventListener('pointerup', () => interactionMode = 'none');
+    window.addEventListener('touchend', () => interactionMode = 'none');
 
     function clampCrop() {
         if (crop.x < 0) crop.x = 0; if (crop.y < 0) crop.y = 0;
@@ -411,11 +316,7 @@
         if (crop.y + crop.h > img.height) { if(interactionMode === 'moving') crop.y = img.height - crop.h; else crop.h = img.height - crop.y; }
     }
 
-    function updateUI() {
-        cropXInput.value = Math.round(crop.x); cropYInput.value = Math.round(crop.y);
-        cropWInput.value = Math.round(crop.w); cropHInput.value = Math.round(crop.h);
-        document.getElementById('opacityDisplay').innerText = opacityInput.value;
-    }
+    function updateUI() { document.getElementById('opacityDisplay').innerText = opacityInput.value; }
 
     function draw() {
         if (!img.src) return;
@@ -425,30 +326,26 @@
         ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.globalAlpha = opacityInput.value / 100; ctx.drawImage(img, 0, 0); ctx.globalAlpha = 1.0;
 
-        // マスク
         ctx.fillStyle = "rgba(0,0,0,0.5)";
         ctx.fillRect(0, 0, canvas.width, crop.y);
         ctx.fillRect(0, crop.y + crop.h, canvas.width, canvas.height - (crop.y + crop.h));
         ctx.fillRect(0, crop.y, crop.x, crop.h);
         ctx.fillRect(crop.x + crop.w, crop.y, canvas.width - (crop.x + crop.w), crop.h);
 
-        // グリッド
         const r = parseInt(rowsInput.value) || 1; const c = parseInt(colsInput.value) || 1;
         ctx.strokeStyle = gridColorInput.value; ctx.lineWidth = parseInt(gridWeightInput.value);
         ctx.beginPath();
-        for (let i = 0; i <= c; i++) { const x = crop.x + (crop.w / c) * i; ctx.moveTo(x, crop.y); ctx.lineTo(x, crop.y + crop.h); }
-        for (let i = 0; i <= r; i++) { const y = crop.y + (crop.h / r) * i; ctx.moveTo(crop.x, y); ctx.lineTo(crop.x + crop.w, y); }
+        for (let i = 0; i <= c; i++) { const x = crop.x + (crop.w/c)*i; ctx.moveTo(x, crop.y); ctx.lineTo(x, crop.y + crop.h); }
+        for (let i = 0; i <= r; i++) { const y = crop.y + (crop.h/r)*i; ctx.moveTo(crop.x, y); ctx.lineTo(crop.x + crop.w, y); }
         ctx.stroke();
 
-        // ハンドル描画 (青いハンドルに白枠で鮮明に)
-        ctx.fillStyle = "#007bff";
-        ctx.strokeStyle = "#fff"; ctx.lineWidth = 2 / scale;
+        ctx.fillStyle = "#007bff"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2 / scale;
         const hs = handleSize / scale;
         const handles = getHandles();
         for (const h of Object.values(handles)) { ctx.fillRect(h.x, h.y, h.w, h.h); ctx.strokeRect(h.x, h.y, h.w, h.h); }
     }
 
-    [rowsInput, colsInput, opacityInput, gridColorInput, gridWeightInput].forEach(el => el.oninput = draw);
+    [rowsInput, colsInput, opacityInput, gridColorInput, gridWeightInput].forEach(el => el.oninput = () => { updateUI(); draw(); });
 
     document.getElementById('downloadBtn').onclick = () => {
         if (!img.src) return;
