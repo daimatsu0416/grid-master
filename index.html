@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Grid Master - Responsive</title>
+    <title>Grid Master - Mobile Scroll Fix</title>
     <style>
         :root { 
             --primary-color: #007bff; 
@@ -100,7 +100,7 @@
             align-items: center; 
             justify-content: center; 
             background: #e9ecef; 
-            touch-action: none; /* スマホのスクロールを抑制 */
+            /* touch-action: none; スマホのスクロールを阻害するため削除 */
         }
 
         canvas { 
@@ -153,20 +153,23 @@
             border-radius: 6px; 
         }
 
+        .data-display { font-size: 0.7rem; color: #999; margin-top: 20px; border-top: 1px dashed #ddd; padding-top: 10px; }
+
         /* レスポンシブ対応 (スマホ・タブレット用) */
         @media (max-width: 768px) {
-            main { flex-direction: column; overflow-y: auto; }
+            main { flex-direction: column-reverse; overflow-y: auto; } /* プレビューを上、設定を下にする */
             #sidebar { 
                 width: 100%; 
                 height: auto; 
                 border-right: none; 
-                border-bottom: 1px solid var(--border-color); 
+                border-top: 1px solid var(--border-color); 
                 padding: 15px; 
                 flex-shrink: 0;
             }
             #canvas-container { 
-                min-height: 450px; /* 操作エリアを確保 */
+                min-height: 400px; /* 操作エリアを確保 */
                 flex: none; 
+                touch-action: auto; /* 明示的に自動に */
             }
             header { font-size: 0.9rem; padding: 8px; }
             .guide { display: none; } /* スマホでは説明を簡略化 */
@@ -214,6 +217,12 @@
         </div>
 
         <button id="downloadBtn">PNGで保存</button>
+
+        <div class="data-display">
+            <label>選択範囲 (px)</label>
+            <div class="row"><input type="number" id="cropX" readonly> <input type="number" id="cropY" readonly></div>
+            <div class="row" style="margin-top:5px;"><input type="number" id="cropW" readonly> <input type="number" id="cropH" readonly></div>
+        </div>
     </aside>
 
     <div id="canvas-container">
@@ -228,6 +237,10 @@
     const dropOverlay = document.getElementById('drop-overlay');
     
     const upload = document.getElementById('upload');
+    const cropXInput = document.getElementById('cropX');
+    const cropYInput = document.getElementById('cropY');
+    const cropWInput = document.getElementById('cropW');
+    const cropHInput = document.getElementById('cropH');
     const rowsInput = document.getElementById('rows');
     const colsInput = document.getElementById('cols');
     const opacityInput = document.getElementById('opacity');
@@ -240,7 +253,7 @@
     let interactionMode = 'none';
     let activeHandle = null;
     let lastMouse = { x: 0, y: 0 };
-    const handleSize = 14; // スマホでも掴みやすいサイズ
+    const handleSize = 16; // スマホでも掴みやすいサイズ
 
     // --- ファイル読み込み ---
     function handleFile(file) {
@@ -264,14 +277,15 @@
     window.addEventListener('drop', (e) => { e.preventDefault(); dropOverlay.style.display = 'none'; handleFile(e.dataTransfer.files[0]); });
 
     function autoFitScale() {
-        const padding = 40;
+        const padding = 20; // 余白を少なく
         scale = Math.min((container.clientWidth - padding) / img.width, (container.clientHeight - padding) / img.height, 1.0);
     }
 
-    function getMousePos(e) {
+    // イベントオブジェクトから画像上の座標を取得する関数
+    function getMousePos(e, isTouch = false) {
         const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+        const clientY = isTouch ? e.touches[0].clientY : e.clientY;
         return { x: (clientX - rect.left) / scale, y: (clientY - rect.top) / scale };
     }
 
@@ -303,12 +317,13 @@
         clampCrop(); updateUI(); draw();
     };
 
-    const startAction = (e) => {
+    // 操作開始の共通処理
+    const startAction = (e, isTouch = false) => {
         if (!img.src) return;
-        const m = getMousePos(e);
+        const m = getMousePos(e, isTouch);
         const handles = getHandles();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+        const clientY = isTouch ? e.touches[0].clientY : e.clientY;
 
         activeHandle = null;
         for (const [key, h] of Object.entries(handles)) {
@@ -321,13 +336,13 @@
             else interactionMode = 'none';
         }
         lastMouse = { x: clientX, y: clientY };
+        // タッチ操作の場合、ここでdrawを呼ばない（スクロールと競合するため、moveActionで処理）
     };
 
-    const moveAction = (e) => {
+    // 移動・リサイズの共通処理
+    const handleMove = (e, clientX, clientY, isTouch = false) => {
         if (!img.src || interactionMode === 'none') return;
-        const m = getMousePos(e);
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const m = getMousePos(e, isTouch);
 
         const dx = (clientX - lastMouse.x) / scale;
         const dy = (clientY - lastMouse.y) / scale;
@@ -352,9 +367,43 @@
         clampCrop(); updateUI(); draw();
     };
 
-    container.addEventListener('pointerdown', startAction);
-    window.addEventListener('pointermove', moveAction);
-    window.addEventListener('pointerup', () => interactionMode = 'none');
+    const mouseMoveAction = (e) => {
+        // マウスカーソルの変更（PointerMoveで処理）
+        if (interactionMode === 'none') {
+            const m = getMousePos(e, false);
+            const handles = getHandles();
+            let over = false;
+            for (const h of Object.values(handles)) {
+                if (m.x >= h.x && m.x <= h.x + h.w && m.y >= h.y && m.y <= h.y + h.h) {
+                    container.style.cursor = h.cursor; over = true; break;
+                }
+            }
+            if (!over) container.style.cursor = (img.src && m.x >= crop.x && m.x <= crop.x + crop.w && m.y >= crop.y && m.y <= crop.y + crop.h) ? 'move' : 'default';
+        }
+        handleMove(e, e.clientX, e.clientY, false);
+    };
+
+    const touchMoveAction = (e) => {
+        if (!img.src || interactionMode === 'none') return;
+        
+        // 操作中（リサイズ、移動）の場合のみ、ブラウザのデフォルトスクロールを止める
+        if (e.cancelable) e.preventDefault();
+        
+        // タッチポイント情報を取得
+        const touch = e.touches[0];
+        handleMove(e, touch.clientX, touch.clientY, true);
+    };
+
+    // イベントリスナーの登録（マウスとタッチを分ける）
+    container.addEventListener('pointerdown', (e) => { startAction(e, false); container.setPointerCapture(e.pointerId); });
+    container.addEventListener('touchstart', (e) => { startAction(e, true); }); // タッチ開始
+
+    window.addEventListener('pointermove', mouseMoveAction);
+    container.addEventListener('touchmove', touchMoveAction, { passive: false }); // passive: false でスクロール抑止可能に
+
+    window.addEventListener('pointerup', (e) => { interactionMode = 'none'; container.releasePointerCapture(e.pointerId); });
+    window.addEventListener('touchend', () => { interactionMode = 'none'; });
+    window.addEventListener('touchcancel', () => { interactionMode = 'none'; }); // キャンセル時もクリア
 
     function clampCrop() {
         if (crop.x < 0) crop.x = 0; if (crop.y < 0) crop.y = 0;
@@ -362,7 +411,11 @@
         if (crop.y + crop.h > img.height) { if(interactionMode === 'moving') crop.y = img.height - crop.h; else crop.h = img.height - crop.y; }
     }
 
-    function updateUI() { document.getElementById('opacityDisplay').innerText = opacityInput.value; }
+    function updateUI() {
+        cropXInput.value = Math.round(crop.x); cropYInput.value = Math.round(crop.y);
+        cropWInput.value = Math.round(crop.w); cropHInput.value = Math.round(crop.h);
+        document.getElementById('opacityDisplay').innerText = opacityInput.value;
+    }
 
     function draw() {
         if (!img.src) return;
@@ -372,20 +425,24 @@
         ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.globalAlpha = opacityInput.value / 100; ctx.drawImage(img, 0, 0); ctx.globalAlpha = 1.0;
 
+        // マスク
         ctx.fillStyle = "rgba(0,0,0,0.5)";
         ctx.fillRect(0, 0, canvas.width, crop.y);
         ctx.fillRect(0, crop.y + crop.h, canvas.width, canvas.height - (crop.y + crop.h));
         ctx.fillRect(0, crop.y, crop.x, crop.h);
         ctx.fillRect(crop.x + crop.w, crop.y, canvas.width - (crop.x + crop.w), crop.h);
 
+        // グリッド
         const r = parseInt(rowsInput.value) || 1; const c = parseInt(colsInput.value) || 1;
         ctx.strokeStyle = gridColorInput.value; ctx.lineWidth = parseInt(gridWeightInput.value);
         ctx.beginPath();
-        for (let i = 0; i <= c; i++) { const x = crop.x + (crop.w/c)*i; ctx.moveTo(x, crop.y); ctx.lineTo(x, crop.y + crop.h); }
-        for (let i = 0; i <= r; i++) { const y = crop.y + (crop.h/r)*i; ctx.moveTo(crop.x, y); ctx.lineTo(crop.x + crop.w, y); }
+        for (let i = 0; i <= c; i++) { const x = crop.x + (crop.w / c) * i; ctx.moveTo(x, crop.y); ctx.lineTo(x, crop.y + crop.h); }
+        for (let i = 0; i <= r; i++) { const y = crop.y + (crop.h / r) * i; ctx.moveTo(crop.x, y); ctx.lineTo(crop.x + crop.w, y); }
         ctx.stroke();
 
-        ctx.fillStyle = "#007bff"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2 / scale;
+        // ハンドル描画 (青いハンドルに白枠で鮮明に)
+        ctx.fillStyle = "#007bff";
+        ctx.strokeStyle = "#fff"; ctx.lineWidth = 2 / scale;
         const hs = handleSize / scale;
         const handles = getHandles();
         for (const h of Object.values(handles)) { ctx.fillRect(h.x, h.y, h.w, h.h); ctx.strokeRect(h.x, h.y, h.w, h.h); }
