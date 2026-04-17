@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Grid Master - Compact UI</title>
+    <title>Grid Master - Drawing Assistant</title>
     <style>
         :root { 
             --primary-color: #007bff; 
-            --bg-color: #f0f2f5; 
+            --bg-color: #f4f7f9; 
             --sidebar-bg: #ffffff;
             --header-bg: #007bff;
             --text-color: #333333;
@@ -42,7 +42,7 @@
             overflow: hidden; 
         }
         
-        /* PC: 左側サイドバー / モバイル: 下側パネル */
+        /* サイドバー */
         #sidebar { 
             width: 280px; 
             background: var(--sidebar-bg); 
@@ -53,6 +53,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.02);
         }
 
         .control-group { 
@@ -70,7 +71,7 @@
         
         input[type="number"], input[type="range"], select { 
             width: 100%; 
-            padding: 6px; 
+            padding: 7px; 
             background: #fff; 
             border: 1px solid var(--border-color); 
             border-radius: 4px; 
@@ -80,9 +81,10 @@
 
         input[type="color"] { 
             border: 1px solid var(--border-color); 
-            height: 30px; 
+            height: 32px; 
             width: 50px;
             padding: 2px;
+            cursor: pointer;
         }
         
         .row { display: flex; gap: 5px; align-items: center; }
@@ -96,11 +98,13 @@
             align-items: center; 
             justify-content: center; 
             background: #d1d8dd; 
+            touch-action: none;
         }
 
         canvas { 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15); 
             background: white; 
+            cursor: move;
         }
 
         #drop-overlay { 
@@ -109,6 +113,14 @@
             border: 3px dashed var(--primary-color); 
             display: none; align-items: center; justify-content: center; 
             z-index: 100; color: var(--primary-color); font-weight: bold; 
+            pointer-events: none;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 5px;
         }
 
         button { 
@@ -116,37 +128,48 @@
             border: none; border-radius: 6px; 
             font-weight: bold; cursor: pointer; 
             font-size: 0.9rem; 
+            transition: 0.2s;
         }
 
-        #downloadBtn { background: var(--primary-color); color: white; margin-top: 5px; }
+        #downloadBtn { background: var(--primary-color); color: white; }
         #downloadBtn:hover { background: #0056b3; }
+        
+        .hint-text {
+            font-size: 0.65rem;
+            color: #999;
+            line-height: 1.4;
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+        }
 
         /* レスポンシブ対応 (モバイル最適化) */
         @media (max-width: 768px) {
             main { 
-                flex-direction: column; /* 上に画像、下に設定 */
+                flex-direction: column; 
                 overflow-y: auto; 
             }
             #sidebar { 
                 width: 100%; height: auto; 
                 border-right: none; 
                 padding: 15px; 
-                overflow-y: visible; /* 全体スクロールに任せる */
+                overflow-y: visible; 
+                box-sizing: border-box;
             }
             #canvas-container { 
-                height: 45vh; /* 画面の約半分をプレビューに */
-                min-height: 300px;
+                height: 45vh;
+                min-height: 320px;
                 flex: none; 
             }
-            .control-group { margin-bottom: 10px; padding-bottom: 8px; }
+            .hint-text { display: none; }
         }
     </style>
 </head>
 <body>
 
-<div id="drop-overlay">画像をドロップ</div>
+<div id="drop-overlay">画像をここにドロップ</div>
 
-<header>Grid Master</header>
+<header>Grid Master for Artists</header>
 
 <main>
     <div id="canvas-container">
@@ -155,7 +178,7 @@
 
     <aside id="sidebar">
         <div class="control-group">
-            <label>1. 画像のアップロード</label>
+            <label>1. 画像を読み込む</label>
             <input type="file" id="upload" accept="image/*">
         </div>
 
@@ -167,22 +190,28 @@
         </div>
 
         <div class="control-group">
-            <label>3. 透過度: <span id="opacityDisplay">70</span>%</label>
+            <label>3. 画像の透過度: <span id="opacityDisplay">70</span>%</label>
             <input type="range" id="opacity" min="0" max="100" value="70">
         </div>
 
         <div class="control-group">
-            <label>4. 色・太さ</label>
+            <label>4. グリッドの色・太さ</label>
             <div class="row">
                 <input type="color" id="gridColor" value="#000000">
                 <input type="number" id="gridWeight" value="6" min="1">
             </div>
         </div>
 
-        <button id="downloadBtn">PNG保存</button>
-        
-        <div style="font-size: 0.65rem; color: #999; text-align: center; margin-top: 10px;">
-            画像内ドラッグで移動 / 隅ドラッグでサイズ変更
+        <div class="hint-text">
+            <b>操作ガイド</b><br>
+            ・枠内のドラッグ：移動<br>
+            ・枠の角/辺をドラッグ：リサイズ<br>
+            ・マウスホイール：等比拡大縮小
+        </div>
+
+        <div class="btn-group">
+            <button id="downloadBtn">画像を保存 (2枚同時)</button>
+            <p style="font-size:0.6rem; color:#666; margin:0;">※「画像+グリッド」と「透過グリッド」を保存します</p>
         </div>
     </aside>
 </main>
@@ -206,8 +235,9 @@
     let interactionMode = 'none';
     let activeHandle = null;
     let lastMouse = { x: 0, y: 0 };
-    const handleSize = 18; // 掴みやすさ優先
+    const handleSize = 20; // モバイルでの掴みやすさを考慮
 
+    // --- ファイル処理 ---
     function handleFile(file) {
         if (!file || !file.type.match('image.*')) return;
         const reader = new FileReader();
@@ -229,7 +259,7 @@
     window.addEventListener('drop', (e) => { e.preventDefault(); dropOverlay.style.display = 'none'; handleFile(e.dataTransfer.files[0]); });
 
     function autoFitScale() {
-        const padding = 10; // 余白を最小限に
+        const padding = 20;
         scale = Math.min((container.clientWidth - padding) / img.width, (container.clientHeight - padding) / img.height, 1.0);
     }
 
@@ -255,6 +285,7 @@
         };
     }
 
+    // --- インタラクション制御 ---
     function startAction(e, isTouch = false) {
         if (!img.src) return;
         const m = getMousePos(e, isTouch);
@@ -282,7 +313,7 @@
         const m = getMousePos(e, isTouch);
         const dx = (clientX - lastMouse.x) / scale;
         const dy = (clientY - lastMouse.y) / scale;
-        const minS = 20;
+        const minS = 30;
 
         if (interactionMode === 'moving') {
             crop.x += dx; crop.y += dy;
@@ -310,6 +341,18 @@
     window.addEventListener('pointerup', () => interactionMode = 'none');
     window.addEventListener('touchend', () => interactionMode = 'none');
 
+    container.onwheel = (e) => {
+        if (!img.src) return;
+        e.preventDefault();
+        const factor = e.deltaY > 0 ? 0.95 : 1.05;
+        const newW = crop.w * factor; const newH = crop.h * factor;
+        if (newW > 20 && newW <= img.width && newH > 20 && newH <= img.height) {
+            crop.x -= (newW - crop.w) / 2; crop.y -= (newH - crop.h) / 2;
+            crop.w = newW; crop.h = newH;
+        }
+        clampCrop(); draw();
+    };
+
     function clampCrop() {
         if (crop.x < 0) crop.x = 0; if (crop.y < 0) crop.y = 0;
         if (crop.x + crop.w > img.width) { if(interactionMode === 'moving') crop.x = img.width - crop.w; else crop.w = img.width - crop.x; }
@@ -318,51 +361,89 @@
 
     function updateUI() { document.getElementById('opacityDisplay').innerText = opacityInput.value; }
 
+    // --- 描画処理 ---
     function draw() {
         if (!img.src) return;
         canvas.width = img.width; canvas.height = img.height;
         canvas.style.transform = `scale(${scale})`;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // 元画像
         ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.globalAlpha = opacityInput.value / 100; ctx.drawImage(img, 0, 0); ctx.globalAlpha = 1.0;
 
+        // マスク (切り抜き範囲外を暗く)
         ctx.fillStyle = "rgba(0,0,0,0.5)";
         ctx.fillRect(0, 0, canvas.width, crop.y);
         ctx.fillRect(0, crop.y + crop.h, canvas.width, canvas.height - (crop.y + crop.h));
         ctx.fillRect(0, crop.y, crop.x, crop.h);
         ctx.fillRect(crop.x + crop.w, crop.y, canvas.width - (crop.x + crop.w), crop.h);
 
-        const r = parseInt(rowsInput.value) || 1; const c = parseInt(colsInput.value) || 1;
-        ctx.strokeStyle = gridColorInput.value; ctx.lineWidth = parseInt(gridWeightInput.value);
-        ctx.beginPath();
-        for (let i = 0; i <= c; i++) { const x = crop.x + (crop.w/c)*i; ctx.moveTo(x, crop.y); ctx.lineTo(x, crop.y + crop.h); }
-        for (let i = 0; i <= r; i++) { const y = crop.y + (crop.h/r)*i; ctx.moveTo(crop.x, y); ctx.lineTo(crop.x + crop.w, y); }
-        ctx.stroke();
+        // グリッド
+        drawGrid(ctx, crop.x, crop.y, crop.w, crop.h);
 
+        // 操作ハンドル
         ctx.fillStyle = "#007bff"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2 / scale;
-        const hs = handleSize / scale;
         const handles = getHandles();
+        const hs = handleSize / scale;
         for (const h of Object.values(handles)) { ctx.fillRect(h.x, h.y, h.w, h.h); ctx.strokeRect(h.x, h.y, h.w, h.h); }
+    }
+
+    function drawGrid(targetCtx, x, y, w, h, isExport = false) {
+        const r = parseInt(rowsInput.value) || 1;
+        const c = parseInt(colsInput.value) || 1;
+        targetCtx.strokeStyle = gridColorInput.value;
+        targetCtx.lineWidth = parseInt(gridWeightInput.value);
+        targetCtx.beginPath();
+        for (let i = 0; i <= c; i++) {
+            const posX = isExport ? (w/c)*i : x + (w/c)*i;
+            targetCtx.moveTo(posX, isExport ? 0 : y);
+            targetCtx.lineTo(posX, isExport ? h : y + h);
+        }
+        for (let i = 0; i <= r; i++) {
+            const posY = isExport ? (h/r)*i : y + (h/r)*i;
+            targetCtx.moveTo(isExport ? 0 : x, posY);
+            targetCtx.lineTo(isExport ? w : x + w, posY);
+        }
+        targetCtx.stroke();
     }
 
     [rowsInput, colsInput, opacityInput, gridColorInput, gridWeightInput].forEach(el => el.oninput = () => { updateUI(); draw(); });
 
+    // --- 保存機能 ---
     document.getElementById('downloadBtn').onclick = () => {
         if (!img.src) return;
-        const sC = document.createElement('canvas'); sC.width = crop.w; sC.height = crop.h;
-        const s = sC.getContext('2d');
-        s.fillStyle = "#fff"; s.fillRect(0, 0, crop.w, crop.h);
-        s.globalAlpha = opacityInput.value / 100;
-        s.drawImage(img, crop.x, crop.y, crop.w, crop.h, 0, 0, crop.w, crop.h);
-        s.globalAlpha = 1.0;
-        const r = parseInt(rowsInput.value); const c = parseInt(colsInput.value);
-        s.strokeStyle = gridColorInput.value; s.lineWidth = parseInt(gridWeightInput.value);
-        s.beginPath();
-        for (let i = 0; i <= c; i++) { const x = (crop.w/c)*i; s.moveTo(x, 0); s.lineTo(x, crop.h); }
-        for (let i = 0; i <= r; i++) { const y = (crop.h/r)*i; s.moveTo(0, y); s.lineTo(crop.w, y); }
-        s.stroke();
-        const a = document.createElement('a'); a.download = 'grid_output.png'; a.href = sC.toDataURL('image/png'); a.click();
+
+        // 1. 画像＋グリッドの保存
+        saveResult(true, 'gridded_photo.png');
+
+        // 2. 透過グリッドのみの保存 (少し遅らせて連続ダウンロードを安定させる)
+        setTimeout(() => {
+            saveResult(false, 'grid_only.png');
+        }, 600);
     };
+
+    function saveResult(includeImage, fileName) {
+        const sC = document.createElement('canvas');
+        sC.width = crop.w; sC.height = crop.h;
+        const s = sC.getContext('2d');
+
+        if (includeImage) {
+            s.fillStyle = "#fff"; s.fillRect(0, 0, crop.w, crop.h);
+            s.globalAlpha = opacityInput.value / 100;
+            s.drawImage(img, crop.x, crop.y, crop.w, crop.h, 0, 0, crop.w, crop.h);
+            s.globalAlpha = 1.0;
+        } else {
+            s.clearRect(0, 0, crop.w, crop.h); // 透明
+        }
+
+        drawGrid(s, 0, 0, crop.w, crop.h, true);
+
+        const a = document.createElement('a');
+        a.download = fileName;
+        a.href = sC.toDataURL('image/png');
+        a.click();
+    }
 
     window.onresize = () => { if(img.src) { autoFitScale(); draw(); } };
 </script>
